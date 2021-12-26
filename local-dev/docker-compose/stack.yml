@@ -1,0 +1,12 @@
+version: '3.1'
+
+services:
+
+  clickhouse:
+    image: yandex/clickhouse-server:latest
+    restart: always
+    ports:
+      # HTTP port
+      - 8123:8123
+      # Native client port
+      - 9000:9000

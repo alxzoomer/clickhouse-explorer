@@ -35,3 +35,19 @@ fmt:
 ## pre-commit: run pre-commit actions to format and check the code
 .PHONY: precommit
 pre-commit: fmt vet
+
+compose_project=clickhouse-explorer
+## docker/up: run docker containers
+.PHONY: docker/up
+docker/up:
+	docker-compose -p ${compose_project} -f ./local-dev/docker-compose/stack.yml up -d
+
+## docker/down: stop docker containers
+.PHONY: docker/down
+docker/down:
+	docker-compose -p ${compose_project} -explorer -f ./local-dev/docker-compose/stack.yml down
+
+## docker/logs: read docker containers log output
+.PHONY: docker/logs
+docker/logs:
+	docker-compose -p ${compose_project} -f ./local-dev/docker-compose/stack.yml logs -f
