@@ -8,6 +8,9 @@ github.com/ClickHouse/clickhouse-go/lib/data
 github.com/ClickHouse/clickhouse-go/lib/lz4
 github.com/ClickHouse/clickhouse-go/lib/protocol
 github.com/ClickHouse/clickhouse-go/lib/types
+# github.com/DATA-DOG/go-sqlmock v1.5.0
+## explicit
+github.com/DATA-DOG/go-sqlmock
 # github.com/cloudflare/golz4 v0.0.0-20150217214814-ef862a3cdc58
 ## explicit
 github.com/cloudflare/golz4
