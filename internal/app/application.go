@@ -4,21 +4,29 @@ import (
 	"database/sql"
 	"github.com/ClickHouse/clickhouse-go"
 	"github.com/alxzoomer/clickhouse-explorer/pkg/dbexport"
-	"log"
 	"net/http"
+	"os"
+
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 type Application struct {
 }
 
 func New() *Application {
+	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	if os.Getenv("APP_ENVIRONMENT") == "DEV" {
+		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	}
 	return &Application{}
 }
 
 func (app *Application) Run() {
-	log.Println("Starting clickhouse-explorer. Open http://localhost:8000")
-	http.HandleFunc("/", handler) // each request calls handler
-	log.Fatal(http.ListenAndServe("localhost:8000", nil))
+	log.Info().Msg("Starting clickhouse-explorer. Open http://localhost:8000")
+	http.HandleFunc("/", handler)
+	err := http.ListenAndServe("localhost:8000", nil)
+	log.Fatal().Err(err).Msg("")
 }
 
 func handler(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +43,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		if exception, ok := err.(*clickhouse.Exception); ok {
 			log.Printf("[%d] %s \n%s\n", exception.Code, exception.Message, exception.StackTrace)
 		} else {
-			log.Println(err)
+			log.Error().Err(err).Msg("")
 		}
 		w.WriteHeader(http.StatusInternalServerError)
 		return
