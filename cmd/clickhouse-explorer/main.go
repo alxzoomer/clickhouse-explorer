@@ -3,9 +3,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
-	"log"
-
 	"github.com/ClickHouse/clickhouse-go"
+	"github.com/alxzoomer/clickhouse-explorer/pkg/dbexport"
+	"log"
 )
 
 func main() {
@@ -32,15 +32,9 @@ func main() {
 	}
 	defer rows.Close()
 
-	for rows.Next() {
-		var (
-			id          int
-			name        string
-			description string
-		)
-		if err := rows.Scan(&id, &name, &description); err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("ID: %d; Name: %s; Description: %s", id, name, description)
+	js, err := dbexport.MarshalDbRows(rows)
+	if err != nil {
+		log.Fatal(err)
 	}
+	log.Printf("%s", string(js))
 }
