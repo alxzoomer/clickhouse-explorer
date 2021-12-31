@@ -2,6 +2,7 @@ package router
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"github.com/ClickHouse/clickhouse-go"
 	"github.com/alxzoomer/clickhouse-explorer/pkg/dbexport"
@@ -19,6 +20,7 @@ func New() *Router {
 	rt := &Router{
 		routes: router,
 	}
+	router.NotFound = http.HandlerFunc(rt.notFoundHandler)
 	router.GET("/", rt.indexHandler)
 	router.GET("/api/v1/query", rt.queryHandler)
 	return rt
@@ -26,6 +28,30 @@ func New() *Router {
 
 func (rt *Router) Handler() http.Handler {
 	return rt.routes
+}
+
+func (rt *Router) notFoundHandler(w http.ResponseWriter, r *http.Request) {
+	data := struct {
+		Status  int    `json:"status"`
+		Message string `json:"message"`
+		Uri     string `json:"uri"`
+	}{
+		Status:  http.StatusNotFound,
+		Message: "Not Found",
+		Uri:     r.RequestURI,
+	}
+	js, err := json.Marshal(data)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+
+	if _, err = w.Write(js); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNotFound)
 }
 
 func (rt *Router) indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
