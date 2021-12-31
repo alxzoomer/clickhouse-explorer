@@ -2,16 +2,19 @@ package app
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/ClickHouse/clickhouse-go"
 	"github.com/alxzoomer/clickhouse-explorer/pkg/dbexport"
 	"net/http"
 	"os"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 type Application struct {
+	router *httprouter.Router
 }
 
 func New() *Application {
@@ -19,25 +22,50 @@ func New() *Application {
 	if os.Getenv("APP_ENVIRONMENT") == "DEV" {
 		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 	}
-	return &Application{}
+	return &Application{
+		router: httprouter.New(),
+	}
 }
 
 func (app *Application) Run() {
 	log.Info().Msg("Starting clickhouse-explorer. Open http://localhost:8000")
-	http.HandleFunc("/", handler)
-	err := http.ListenAndServe("localhost:8000", nil)
+	app.router.GET("/", app.indexHandler)
+	app.router.GET("/api/v1/query", app.queryHandler)
+	err := http.ListenAndServe("localhost:8000", app.router)
 	log.Fatal().Err(err).Msg("")
 }
 
-func handler(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+func (app *Application) indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	html := `
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>ClickHouse Explorer</title>
+    <link rel="stylesheet" href="style.css">
+  </head>
+  <body>
+	<h1>Under construction</h1>
+	<div>
+		<a href="http://localhost:8000/api/v1/query">Example query</a>
+	</div>
+  </body>
+</html>
+`
+
+	_, err := fmt.Fprintf(w, html)
+	log.Err(err).
+		Str("method", r.Method).
+		Str("uri", r.RequestURI).
+		Msg("index handler")
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
 	}
-	if r.RequestURI != "/" {
-		w.WriteHeader(http.StatusNotFound)
-		return
-	}
+}
+
+func (app *Application) queryHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	j, err := queryExample()
 	if err != nil {
 		if exception, ok := err.(*clickhouse.Exception); ok {
@@ -49,6 +77,10 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, err = w.Write(j)
+	log.Err(err).
+		Str("method", r.Method).
+		Str("uri", r.RequestURI).
+		Msg("index handler")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
