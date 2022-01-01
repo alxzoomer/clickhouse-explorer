@@ -2,7 +2,7 @@ package router
 
 import (
 	"database/sql"
-	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/ClickHouse/clickhouse-go"
 	"github.com/alxzoomer/clickhouse-explorer/pkg/dbexport"
@@ -32,58 +32,12 @@ func (rt *Router) Handler() http.Handler {
 }
 
 func (rt *Router) notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	data := struct {
-		Status  int    `json:"status"`
-		Message string `json:"message"`
-		Uri     string `json:"uri"`
-	}{
-		Status:  http.StatusNotFound,
-		Message: "Not Found",
-		Uri:     r.RequestURI,
-	}
-	js, err := json.Marshal(data)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusNotFound)
-
-	if _, err = w.Write(js); err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	rt.notFoundResponse(w, r)
 }
 
 func (rt *Router) panicHandler(w http.ResponseWriter, r *http.Request, rcv interface{}) {
-	log.Error().
-		Interface("recovery", rcv).
-		Str("uri", r.RequestURI).
-		Str("method", r.Method).
-		Msg("Internal server error")
-
-	data := struct {
-		Status  int    `json:"status"`
-		Message string `json:"message"`
-		Uri     string `json:"uri"`
-	}{
-		Status:  http.StatusInternalServerError,
-		Message: "500 Internal server error",
-		Uri:     r.RequestURI,
-	}
-	js, err := json.Marshal(data)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusInternalServerError)
-	if _, err = w.Write(js); err != nil {
-		log.Error().
-			Err(err).
-			Str("uri", r.RequestURI).
-			Str("method", r.Method).
-			Msg("Internal server error")
-	}
+	err := errors.New(fmt.Sprintf("%v", rcv))
+	rt.internalServerErrorResponse(w, r, err)
 }
 
 func (rt *Router) indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
