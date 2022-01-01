@@ -1,12 +1,16 @@
 package app
 
 import (
+	"context"
+	"errors"
 	"fmt"
 	"github.com/alxzoomer/clickhouse-explorer/internal/router"
 	"github.com/alxzoomer/clickhouse-explorer/pkg/logging"
 	"io"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/rs/zerolog"
@@ -43,7 +47,34 @@ func New() *Application {
 }
 
 func (app *Application) Run() {
-	log.Info().Msg("Starting clickhouse-explorer. Open http://localhost:8000")
-	err := app.srv.ListenAndServe()
-	log.Fatal().Err(err).Msg("")
+	log.Info().Msg("starting clickhouse-explorer. open http://localhost:8000")
+	shutdownError := make(chan error)
+
+	go func() {
+		quit := make(chan os.Signal, 1)
+		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+		s := <-quit
+		log.Info().
+			Interface("signal", s).
+			Msg("caught signal, shutting down HTTP server gracefully")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		err := app.srv.Shutdown(ctx)
+		if err != nil {
+			shutdownError <- err
+		}
+		log.Info().Msg("graceful shutdown completed")
+		shutdownError <- nil
+	}()
+
+	go func() {
+		err := app.srv.ListenAndServe()
+		if !errors.Is(err, http.ErrServerClosed) {
+			shutdownError <- err
+		}
+	}()
+
+	err := <-shutdownError
+	log.Err(err).Msg("service stopped")
 }
