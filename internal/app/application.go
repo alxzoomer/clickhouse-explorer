@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/alxzoomer/clickhouse-explorer/internal/router"
 	"github.com/alxzoomer/clickhouse-explorer/pkg/logging"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -18,9 +19,16 @@ type Application struct {
 
 func New() *Application {
 	zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+	var wr io.Writer = os.Stderr
 	if os.Getenv("APP_ENVIRONMENT") == "DEV" {
-		log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+		wr = zerolog.ConsoleWriter{Out: os.Stderr}
 	}
+	log.Logger = log.
+		With().
+		Caller().
+		Str("service", "app").
+		Logger().
+		Output(wr)
 
 	return &Application{
 		srv: &http.Server{
