@@ -21,6 +21,7 @@ func New() *Router {
 		routes: router,
 	}
 	router.NotFound = http.HandlerFunc(rt.notFoundHandler)
+	router.PanicHandler = rt.panicHandler
 	router.GET("/", rt.indexHandler)
 	router.GET("/api/v1/query", rt.queryHandler)
 	return rt
@@ -54,6 +55,37 @@ func (rt *Router) notFoundHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (rt *Router) panicHandler(w http.ResponseWriter, r *http.Request, rcv interface{}) {
+	log.Error().
+		Interface("recovery", rcv).
+		Str("uri", r.RequestURI).
+		Str("method", r.Method).
+		Msg("Internal server error")
+
+	data := struct {
+		Status  int    `json:"status"`
+		Message string `json:"message"`
+		Uri     string `json:"uri"`
+	}{
+		Status:  http.StatusInternalServerError,
+		Message: "500 Internal server error",
+		Uri:     r.RequestURI,
+	}
+	js, err := json.Marshal(data)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusInternalServerError)
+	if _, err = w.Write(js); err != nil {
+		log.Error().
+			Err(err).
+			Str("uri", r.RequestURI).
+			Str("method", r.Method).
+			Msg("Internal server error")
+	}
+}
+
 func (rt *Router) indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 	html := `
 <!DOCTYPE html>
@@ -75,10 +107,12 @@ func (rt *Router) indexHandler(w http.ResponseWriter, r *http.Request, _ httprou
 `
 
 	_, err := fmt.Fprintf(w, html)
+
 	log.Err(err).
 		Str("method", r.Method).
 		Str("uri", r.RequestURI).
 		Msg("index handler")
+
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	}
