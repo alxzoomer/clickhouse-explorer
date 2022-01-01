@@ -2,7 +2,6 @@ package router
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"github.com/ClickHouse/clickhouse-go"
 	"github.com/alxzoomer/clickhouse-explorer/pkg/dbexport"
@@ -29,15 +28,6 @@ func New() *Router {
 
 func (rt *Router) Handler() http.Handler {
 	return rt.routes
-}
-
-func (rt *Router) notFoundHandler(w http.ResponseWriter, r *http.Request) {
-	rt.notFoundResponse(w, r)
-}
-
-func (rt *Router) panicHandler(w http.ResponseWriter, r *http.Request, rcv interface{}) {
-	err := errors.New(fmt.Sprintf("%v", rcv))
-	rt.internalServerErrorResponse(w, r, err)
 }
 
 func (rt *Router) indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
