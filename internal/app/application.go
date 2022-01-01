@@ -1,16 +1,19 @@
 package app
 
 import (
+	"fmt"
 	"github.com/alxzoomer/clickhouse-explorer/internal/router"
+	"github.com/alxzoomer/clickhouse-explorer/pkg/logging"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
 
 type Application struct {
-	router *router.Router
+	srv *http.Server
 }
 
 func New() *Application {
@@ -20,12 +23,19 @@ func New() *Application {
 	}
 
 	return &Application{
-		router: router.New(),
+		srv: &http.Server{
+			Addr:         fmt.Sprintf(":%d", 8000),
+			Handler:      router.New().Handler(),
+			IdleTimeout:  time.Minute,
+			ReadTimeout:  10 * time.Second,
+			WriteTimeout: 10 * time.Second,
+			ErrorLog:     logging.NewErrorLog(),
+		},
 	}
 }
 
 func (app *Application) Run() {
 	log.Info().Msg("Starting clickhouse-explorer. Open http://localhost:8000")
-	err := http.ListenAndServe("localhost:8000", app.router.Handler())
+	err := app.srv.ListenAndServe()
 	log.Fatal().Err(err).Msg("")
 }
