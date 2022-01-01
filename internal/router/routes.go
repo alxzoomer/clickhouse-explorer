@@ -46,12 +46,12 @@ func (rt *Router) notFoundHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotFound)
 
 	if _, err = w.Write(js); err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	w.WriteHeader(http.StatusNotFound)
 }
 
 func (rt *Router) indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
