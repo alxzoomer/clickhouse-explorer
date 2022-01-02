@@ -2,6 +2,7 @@ package router
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/ClickHouse/clickhouse-go"
 	"github.com/alxzoomer/clickhouse-explorer/pkg/dbexport"
@@ -23,17 +24,40 @@ func (rt *Router) indexHandler(w http.ResponseWriter, r *http.Request, _ httprou
     <link rel="stylesheet" href="style.css">
   </head>
   <body>
+	<script type="text/javascript">
+		async function execQuery() {
+			const url = '/api/v1/query';
+			const data = { query: 'select 1' };
+
+			try {
+			  const response = await fetch(url, {
+				method: 'POST',
+				body: JSON.stringify(data),
+				headers: {
+				  'Content-Type': 'application/json'
+				}
+			  });
+			  const json = await response.json();
+			  console.log('Success:', JSON.stringify(json));
+			  document.getElementById('result').innerHTML = JSON.stringify(json);
+			} catch (error) {
+			  console.error('Error:', error);
+			  document.getElementById('result').innerHTML = JSON.stringify(error);
+			}
+		}
+	</script>
 	<h1>Under construction</h1>
 	<div>
-		<form action="/api/v1/query" method="post">
-			<p><input type="submit" value="Example query"></p>
-		</form>
+		<button type="button" onclick="execQuery()">
+			Click me to exec query.</button>
+	</div>
+	<div id="result" style="width:100%">
 	</div>
   </body>
 </html>
 `
 
-	_, err := fmt.Fprintf(w, html)
+	_, err := fmt.Fprint(w, html)
 
 	log.Err(err).
 		Str("method", r.Method).
@@ -46,36 +70,45 @@ func (rt *Router) indexHandler(w http.ResponseWriter, r *http.Request, _ httprou
 }
 
 func (rt *Router) queryHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	rows, err := queryExample()
+	var p struct {
+		Query string `json:"query"`
+	}
+	err := rt.readJSON(w, r, &p)
+	if err != nil {
+		rt.badRequestResponse(w, r, err)
+		return
+	}
+	rows, err := execQuery(p.Query)
 	if err != nil {
 		if exception, ok := err.(*clickhouse.Exception); ok {
-			log.Printf("[%d] %s \n%s\n", exception.Code, exception.Message, exception.StackTrace)
-		} else {
-			log.Error().Err(err).Msg("")
+			log.Info().
+				Int("code", int(exception.Code)).
+				Str("exception_msg", exception.Message).
+				Str("exception_name", exception.Name).
+				Msg("")
+			// Wrap message without additional details like internal error code and name into separate error instance
+			rt.badRequestResponse(w, r, errors.New(exception.Message))
+			return
 		}
+		log.Error().Err(err).Msg("")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 	e := envelope{"rows": rows, "count": len(rows)}
 	err = rt.writeJSON(w, http.StatusOK, e, nil)
-	log.Err(err).
-		Str("method", r.Method).
-		Str("uri", r.RequestURI).
-		Msg("query handler")
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
+		rt.internalServerErrorResponse(w, r, err)
 	}
 }
 
-func queryExample() ([]interface{}, error) {
+func execQuery(query string) ([]interface{}, error) {
 	// clickhouseUrl := "tcp://127.0.0.1:9000?debug=true"
 	clickhouseUrl := "tcp://127.0.0.1:9000?debug=false"
 	connect, err := sql.Open("clickhouse", clickhouseUrl)
 	if err != nil {
 		return nil, err
 	}
-	defer connect.Close()
+	defer func() { _ = connect.Close() }()
 	connect.SetMaxIdleConns(20)
 	connect.SetMaxOpenConns(20)
 	connect.SetConnMaxIdleTime(15 * time.Minute)
@@ -83,11 +116,11 @@ func queryExample() ([]interface{}, error) {
 		return nil, err
 	}
 
-	rows, err := connect.Query("SELECT * FROM test.example_table")
+	rows, err := connect.Query(query)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	return dbexport.AsArray(rows)
 }
