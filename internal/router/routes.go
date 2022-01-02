@@ -5,6 +5,10 @@ import (
 	"net/http"
 )
 
+type Model interface {
+	Query(query string) ([]interface{}, error)
+}
+
 type Options struct {
 	JSONRequestMaxBytes int64
 }
@@ -12,15 +16,17 @@ type Options struct {
 type Router struct {
 	routes  http.Handler
 	options Options
+	model   Model
 }
 
-func New() *Router {
+func New(model Model) *Router {
 	router := httprouter.New()
 	rt := &Router{
 		routes: router,
 		options: Options{
 			JSONRequestMaxBytes: 1_048_576,
 		},
+		model: model,
 	}
 	router.NotFound = http.HandlerFunc(rt.notFoundHandler)
 	router.PanicHandler = rt.panicHandler

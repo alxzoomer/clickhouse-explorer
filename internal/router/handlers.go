@@ -1,15 +1,12 @@
 package router
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"github.com/ClickHouse/clickhouse-go"
-	"github.com/alxzoomer/clickhouse-explorer/pkg/dbexport"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog/log"
 	"net/http"
-	"time"
 )
 
 func (rt *Router) indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -78,7 +75,7 @@ func (rt *Router) queryHandler(w http.ResponseWriter, r *http.Request, _ httprou
 		rt.badRequestResponse(w, r, err)
 		return
 	}
-	rows, err := execQuery(p.Query)
+	rows, err := rt.model.Query(p.Query)
 	if err != nil {
 		if exception, ok := err.(*clickhouse.Exception); ok {
 			log.Info().
@@ -99,28 +96,4 @@ func (rt *Router) queryHandler(w http.ResponseWriter, r *http.Request, _ httprou
 	if err != nil {
 		rt.internalServerErrorResponse(w, r, err)
 	}
-}
-
-func execQuery(query string) ([]interface{}, error) {
-	// clickhouseUrl := "tcp://127.0.0.1:9000?debug=true"
-	clickhouseUrl := "tcp://127.0.0.1:9000?debug=false"
-	connect, err := sql.Open("clickhouse", clickhouseUrl)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = connect.Close() }()
-	connect.SetMaxIdleConns(20)
-	connect.SetMaxOpenConns(20)
-	connect.SetConnMaxIdleTime(15 * time.Minute)
-	if err := connect.Ping(); err != nil {
-		return nil, err
-	}
-
-	rows, err := connect.Query(query)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = rows.Close() }()
-
-	return dbexport.AsArray(rows)
 }
