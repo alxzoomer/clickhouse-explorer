@@ -51,3 +51,10 @@ docker/down:
 .PHONY: docker/logs
 docker/logs:
 	docker-compose -p ${compose_project} -f ./local-dev/docker-compose/stack.yml logs -f
+
+## db/init: create test database, example_table and fill few records
+.PHONY: db/init
+db/init:
+	cat local-dev/example-table.sql | \
+		docker-compose -p ${compose_project} -f ./local-dev/docker-compose/stack.yml exec -T \
+		-- clickhouse clickhouse-client -mn --verbose
