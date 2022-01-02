@@ -41,7 +41,8 @@ func (app *Application) Run() {
 		signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 		s := <-quit
 		log.Info().
-			Interface("signal", s).
+			Interface("signal_id", s).
+			Str("signal", s.String()).
 			Msg("caught signal, shutting down HTTP server gracefully")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
