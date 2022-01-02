@@ -24,6 +24,14 @@ func (rt *Router) logWarn(r *http.Request, status int) {
 		Msg("")
 }
 
+func (rt *Router) logInfo(r *http.Request, status int) {
+	log.Info().
+		Str("method", r.Method).
+		Stringer("url", r.URL).
+		Int("status", status).
+		Msg("")
+}
+
 func (rt *Router) errorResponse(w http.ResponseWriter, r *http.Request, status int, message interface{}) {
 	env := envelope{"error": message}
 	err := rt.writeJSON(w, status, env, nil)
