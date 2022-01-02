@@ -17,7 +17,7 @@ func New() *Router {
 	router.NotFound = http.HandlerFunc(rt.notFoundHandler)
 	router.PanicHandler = rt.panicHandler
 	router.GET("/", rt.indexHandler)
-	router.GET("/api/v1/query", rt.queryHandler)
+	router.POST("/api/v1/query", rt.queryHandler)
 	return rt
 }
 

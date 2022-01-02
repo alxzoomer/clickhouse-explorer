@@ -8,6 +8,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/zerolog/log"
 	"net/http"
+	"time"
 )
 
 func (rt *Router) indexHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -24,7 +25,9 @@ func (rt *Router) indexHandler(w http.ResponseWriter, r *http.Request, _ httprou
   <body>
 	<h1>Under construction</h1>
 	<div>
-		<a href="http://localhost:8000/api/v1/query">Example query</a>
+		<form action="/api/v1/query" method="post">
+			<p><input type="submit" value="Example query"></p>
+		</form>
 	</div>
   </body>
 </html>
@@ -57,7 +60,7 @@ func (rt *Router) queryHandler(w http.ResponseWriter, r *http.Request, _ httprou
 	log.Err(err).
 		Str("method", r.Method).
 		Str("uri", r.RequestURI).
-		Msg("index handler")
+		Msg("query handler")
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
