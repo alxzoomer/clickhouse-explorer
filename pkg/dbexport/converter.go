@@ -2,11 +2,10 @@ package dbexport
 
 import (
 	"database/sql"
-	"encoding/json"
 )
 
-// MarshalDbRows returns JSON representation of sql.Rows
-func MarshalDbRows(rows *sql.Rows) ([]byte, error) {
+// AsArray returns structured representation of sql.Rows
+func AsArray(rows *sql.Rows) ([]interface{}, error) {
 	columns, err := rows.Columns()
 
 	if err != nil {
@@ -39,6 +38,5 @@ func MarshalDbRows(rows *sql.Rows) ([]byte, error) {
 		// In case when no data in rows the function returns empty array
 		finalRows = []interface{}{}
 	}
-	z, err := json.Marshal(finalRows)
-	return z, err
+	return finalRows, err
 }

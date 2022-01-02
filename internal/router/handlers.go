@@ -46,7 +46,7 @@ func (rt *Router) indexHandler(w http.ResponseWriter, r *http.Request, _ httprou
 }
 
 func (rt *Router) queryHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	j, err := queryExample()
+	rows, err := queryExample()
 	if err != nil {
 		if exception, ok := err.(*clickhouse.Exception); ok {
 			log.Printf("[%d] %s \n%s\n", exception.Code, exception.Message, exception.StackTrace)
@@ -56,7 +56,8 @@ func (rt *Router) queryHandler(w http.ResponseWriter, r *http.Request, _ httprou
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	_, err = w.Write(j)
+	e := envelope{"rows": rows, "count": len(rows)}
+	err = rt.writeJSON(w, http.StatusOK, e, nil)
 	log.Err(err).
 		Str("method", r.Method).
 		Str("uri", r.RequestURI).
@@ -67,7 +68,7 @@ func (rt *Router) queryHandler(w http.ResponseWriter, r *http.Request, _ httprou
 	}
 }
 
-func queryExample() ([]byte, error) {
+func queryExample() ([]interface{}, error) {
 	// clickhouseUrl := "tcp://127.0.0.1:9000?debug=true"
 	clickhouseUrl := "tcp://127.0.0.1:9000?debug=false"
 	connect, err := sql.Open("clickhouse", clickhouseUrl)
@@ -88,5 +89,5 @@ func queryExample() ([]byte, error) {
 	}
 	defer rows.Close()
 
-	return dbexport.MarshalDbRows(rows)
+	return dbexport.AsArray(rows)
 }

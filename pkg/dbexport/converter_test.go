@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-func TestConverter_MarshalDbRows(t *testing.T) {
+func TestConverter_AsArray(t *testing.T) {
 	type args struct {
 		rows *sql.Rows
 	}
@@ -107,20 +107,25 @@ func TestConverter_MarshalDbRows(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MarshalDbRows(tt.args.rows)
+			got, err := AsArray(tt.args.rows)
 			if err != nil && tt.wantErr {
 				return
 			}
 			if (err != nil) != tt.wantErr {
-				t.Errorf("MarshalDbRows() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("AsArray() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			eq, err := JSONBytesEqual(got, tt.want)
+			gotJson, err := json.Marshal(got)
 			if err != nil {
-				t.Errorf("MarshalDbRows() error = %v, wantErr false", err)
+				t.Errorf("Marshal() error = %v", err)
+				return
+			}
+			eq, err := JSONBytesEqual(gotJson, tt.want)
+			if err != nil {
+				t.Errorf("AsArray() error = %v, wantErr false", err)
 			}
 			if !eq {
-				t.Errorf("MarshalDbRows() got = %s, want %s", string(got), string(tt.want))
+				t.Errorf("AsArray() got = %s, want %s", string(gotJson), string(tt.want))
 			}
 		})
 	}
