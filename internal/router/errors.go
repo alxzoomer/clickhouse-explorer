@@ -53,3 +53,8 @@ func (rt *Router) notFoundResponse(w http.ResponseWriter, r *http.Request) {
 	rt.errorResponse(w, r, http.StatusNotFound, m)
 	rt.logWarn(r, http.StatusNotFound)
 }
+
+func (rt *Router) badRequestResponse(w http.ResponseWriter, r *http.Request, err error) {
+	rt.errorResponse(w, r, http.StatusBadRequest, err.Error())
+	rt.logInfo(r, http.StatusBadRequest)
+}
