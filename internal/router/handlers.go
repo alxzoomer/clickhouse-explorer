@@ -75,6 +75,9 @@ func queryExample() ([]byte, error) {
 		return nil, err
 	}
 	defer connect.Close()
+	connect.SetMaxIdleConns(20)
+	connect.SetMaxOpenConns(20)
+	connect.SetConnMaxIdleTime(15 * time.Minute)
 	if err := connect.Ping(); err != nil {
 		return nil, err
 	}
