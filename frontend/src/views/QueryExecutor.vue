@@ -30,11 +30,9 @@
         <q-td :props="props">{{ formatCell(props) }}</q-td>
       </template>
       <template v-slot:no-data="{ message }">
-        <div class="col-1">
-          <q-icon name="warning" class="q-table__bottom-nodata-icon text-red" v-if="errorMessage" />
-          <q-icon name="info" class="q-table__bottom-nodata-icon" v-else />
-        </div>
-        <div class="col-11 error">{{ queryStatus(message) }}</div>
+        <q-icon name="warning" class="q-table__bottom-nodata-icon text-red" v-if="errorMessage" />
+        <q-icon name="info" class="q-table__bottom-nodata-icon" v-else />&nbsp;
+        <div class="error">{{ queryStatus(message) }}</div>
       </template>
     </q-table>
   </div>
