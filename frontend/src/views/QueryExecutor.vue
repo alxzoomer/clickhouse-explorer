@@ -86,10 +86,12 @@ export default defineComponent({
             'Content-Type': 'application/json',
           },
         });
-        if (!resp.ok) {
-          throw await resp.json();
-        }
         const json = await resp.json();
+        if (!resp.ok) {
+          dbrows.value.splice(0, dbrows.value.length);
+          errorMessage.value = json.error;
+          return;
+        }
         const jrows = json.rows;
         if (jrows.length > 0) {
           const cols = Object.keys(jrows[0]).map((k) => ({ name: k, label: k, field: k }));
