@@ -46,19 +46,29 @@ import type { Ace } from 'ace-builds';
 import 'ace-builds/src-noconflict/mode-sql';
 import 'ace-builds/src-noconflict/theme-chrome';
 
+interface ICol {
+  name: string
+  label: string
+  field: string
+}
+
+interface ICell {
+  value: unknown
+}
+
 export default defineComponent({
   components: {
     VAceEditor,
   },
   setup() {
     const dbrows = ref(new Array<unknown>());
-    const dbcols = ref(new Array<any>());
+    const dbcols = ref(new Array<ICol>());
     const loading = ref(false);
     const query = ref('');
     const editor = ref({});
     const errorMessage = ref('');
 
-    function formatCell(props: any): unknown {
+    function formatCell(props: ICell): unknown {
       const { value } = props;
       return Array.isArray(value) ? JSON.stringify(value) : value;
     }
@@ -88,7 +98,8 @@ export default defineComponent({
           dbcols.value.splice(0, dbcols.value.length);
         }
         dbrows.value.splice(0, dbrows.value.length, ...jrows);
-      } catch (e: any) {
+      } catch (e) {
+        dbrows.value.splice(0, dbrows.value.length);
         errorMessage.value = e.error;
       } finally {
         loading.value = false;
