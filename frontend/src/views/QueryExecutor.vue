@@ -13,12 +13,12 @@
           :max-lines="20"
         />
       </q-card-section>
-      <q-separator />
+      <q-separator/>
       <q-card-actions>
         <q-btn flat @click="execQuery" class="text-green" hint="test">Execute</q-btn>
       </q-card-actions>
     </q-card>
-    <q-separator spaced dark />
+    <q-separator spaced dark/>
     <q-table
       title="Query result"
       :rows="dbrows"
@@ -30,18 +30,20 @@
         <q-td :props="props">{{ formatCell(props) }}</q-td>
       </template>
       <template v-slot:no-data="{ message }">
-        <q-icon name="warning" class="q-table__bottom-nodata-icon text-red" v-if="errorMessage" />
-        <q-icon name="info" class="q-table__bottom-nodata-icon" v-else />&nbsp;
-        <div class="error">{{ queryStatus(message) }}</div>
+        <div class="error">
+          <q-icon name="warning" class="q-table__bottom-nodata-icon text-red" v-if="errorMessage"/>
+          <q-icon name="info" class="q-table__bottom-nodata-icon" v-else/>
+          {{ queryStatus(message) }}
+        </div>
       </template>
     </q-table>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
-import { VAceEditor } from 'vue3-ace-editor';
-import type { Ace } from 'ace-builds';
+import {defineComponent, ref} from 'vue';
+import {VAceEditor} from 'vue3-ace-editor';
+import type {Ace} from 'ace-builds';
 
 import 'ace-builds/src-noconflict/mode-sql';
 import 'ace-builds/src-noconflict/theme-chrome';
@@ -69,13 +71,14 @@ export default defineComponent({
     const errorMessage = ref('');
 
     function formatCell(props: ICell): unknown {
-      const { value } = props;
+      const {value} = props;
       return Array.isArray(value) ? JSON.stringify(value) : value;
     }
+
     async function execQuery() {
       const url = '/api/v1/query';
       // const data = { query: 'select * from test.example_table order by 1' };
-      const data = { query: query.value };
+      const data = {query: query.value};
       loading.value = true;
       errorMessage.value = '';
       try {
@@ -94,7 +97,7 @@ export default defineComponent({
         }
         const jrows = json.rows;
         if (jrows.length > 0) {
-          const cols = Object.keys(jrows[0]).map((k) => ({ name: k, label: k, field: k }));
+          const cols = Object.keys(jrows[0]).map((k) => ({name: k, label: k, field: k}));
           dbcols.value.splice(0, dbcols.value.length, ...cols);
         } else {
           dbcols.value.splice(0, dbcols.value.length);
@@ -107,19 +110,22 @@ export default defineComponent({
         loading.value = false;
       }
     }
+
     function editorInit(v: Ace.Editor) {
       query.value = '-- comment\nselect * from test.example_table;';
       v.commands.addCommand({
         name: 'execQuery',
-        bindKey: { win: 'Ctrl-Enter', mac: 'Command-Enter' },
+        bindKey: {win: 'Ctrl-Enter', mac: 'Command-Enter'},
         exec() {
           execQuery();
         },
       });
     }
+
     function queryStatus(defaultMessage: string): string {
       return errorMessage.value || defaultMessage;
     }
+
     return {
       dbrows,
       dbcols,
