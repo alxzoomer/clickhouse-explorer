@@ -138,5 +138,5 @@ export default defineComponent({
 
 <style lang="sass" scoped>
 div.error
-  overflow-wrap: break-word
+  overflow-wrap: anywhere
 </style>
