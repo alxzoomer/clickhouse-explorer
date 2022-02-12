@@ -19,4 +19,11 @@ module.exports = {
   transpileDependencies: [
     'quasar',
   ],
+
+  pages: {
+    index: {
+      entry: 'src/main.ts',
+      title: 'ClickHouse Query Executor',
+    },
+  },
 };
