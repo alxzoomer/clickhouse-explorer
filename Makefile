@@ -45,7 +45,7 @@ docker/up:
 ## docker/down: stop docker containers
 .PHONY: docker/down
 docker/down:
-	docker-compose -p ${compose_project} -explorer -f ./local-dev/docker-compose/stack.yml down
+	docker-compose -p ${compose_project} -f ./local-dev/docker-compose/stack.yml down
 
 ## docker/logs: read docker containers log output
 .PHONY: docker/logs
